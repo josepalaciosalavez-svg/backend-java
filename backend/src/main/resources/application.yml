@@ -1,0 +1,84 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: liverpool-backend
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/liverpool_db}
+      auto-index-creation: false
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: America/Mexico_City
+
+# Mongock - migraciones
+mongock:
+  migration-scan-package: com.liverpool.backend.migration
+  transaction-enabled: false
+
+# JWT
+app:
+  jwt:
+    # IMPORTANTE: En producción definir JWT_SECRET con minimo 32 bytes en hex (64 chars).
+    # Generar con: openssl rand -hex 32
+    secret: ${JWT_SECRET:4c6f6e672d616e642d7365637572652d6b65792d666f722d6c6976657270006f6f6c2d6261636b656e64}
+    expiration-ms: 86400000
+    refresh-expiration-ms: 604800000
+  cors:
+    # En producción cambiar por el dominio real, ej: https://app.liverpool.com
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200,http://localhost:5173}
+  swagger:
+    # URL base de la API que aparece en Swagger UI como servidor de producción.
+    # Si se deja vacío (default) solo aparece el servidor local.
+    # Variable de entorno: API_BASE_URL
+    prod-url: ${API_BASE_URL:}
+    prod-description: ${API_DESCRIPTION:Producción}
+    # URL del servidor de desarrollo. Si se deja vacío usa http://localhost:{port}{context-path}
+    # Variable de entorno: API_DEV_URL
+    dev-url: ${API_DEV_URL:}
+    dev-description: ${API_DEV_DESCRIPTION:Desarrollo local}
+
+# Swagger / OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    groups-order: DESC
+    operationsSorter: method
+    disable-swagger-default-url: true
+  show-actuator: false
+
+logging:
+  level:
+    com.liverpool.backend: DEBUG
+    org.springframework.data.mongodb: WARN
+    io.mongock: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  swagger:
+    prod-url: ${API_BASE_URL}
+    prod-description: ${API_DESCRIPTION:Producción}
+
+logging:
+  level:
+    com.liverpool.backend: INFO
