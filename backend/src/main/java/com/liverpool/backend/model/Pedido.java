@@ -7,32 +7,37 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "datos_entrega")
-public class DatosEntrega {
+@Document(collection = "pedidos")
+public class Pedido {
 
     @Id
     private String id;
 
-    @Indexed
-    @Field("cliente_id")
-    private String clienteId;
+    @Field("codigo_producto")
+    private String codigoProducto;
 
-    @Field("direccion_envio")
-    private String direccionEnvio;
+    @Field("cantidad")
+    private Integer cantidad;
 
-    @Field("status")
+    @Field("precio")
+    private BigDecimal precio;
+
+    @Field("status_pedido")
     @Builder.Default
-    private StatusEntrega status = StatusEntrega.PENDIENTE;
+    private StatusPedido statusPedido = StatusPedido.PENDIENTE;
+
+    @Field("entrega_id")
+    private String entregaId;
 
     @CreatedDate
     @Field("created_at")
@@ -42,7 +47,7 @@ public class DatosEntrega {
     @Field("updated_at")
     private LocalDateTime updatedAt;
 
-    public enum StatusEntrega {
-        PENDIENTE, EN_PROCESO, ENTREGADO, CANCELADO
+    public enum StatusPedido {
+        PENDIENTE, PROCESANDO, ENVIADO, ENTREGADO, CANCELADO
     }
 }

@@ -4,21 +4,25 @@ import com.liverpool.backend.dto.request.EntregaRequest;
 import com.liverpool.backend.dto.response.EntregaResponse;
 import com.liverpool.backend.dto.response.PagedResponse;
 import com.liverpool.backend.exception.ResourceNotFoundException;
-import com.liverpool.backend.model.DatosEntrega;
+import com.liverpool.backend.model.Cliente;
 import com.liverpool.backend.model.Entrega;
-import com.liverpool.backend.repository.DatosEntregaRepository;
+import com.liverpool.backend.repository.ClienteRepository;
 import com.liverpool.backend.repository.EntregaRepository;
 import com.liverpool.backend.service.EntregaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -27,12 +31,12 @@ import java.util.stream.Collectors;
 public class EntregaServiceImpl implements EntregaService {
 
     private final EntregaRepository entregaRepository;
-    private final DatosEntregaRepository datosEntregaRepository;
+    private final ClienteRepository clienteRepository;
 
     @Override
     public PagedResponse<EntregaResponse> findAll(int page, int size, String sortBy,
-                                                   String sortDir, String search,
-                                                   Entrega.StatusPedido statusPedido) {
+                                                  String sortDir, String search,
+                                                  Entrega.StatusEntrega status) {
         Sort sort = sortDir.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
@@ -40,47 +44,45 @@ public class EntregaServiceImpl implements EntregaService {
 
         Page<Entrega> entregas;
         boolean hasSearch = StringUtils.hasText(search);
-        boolean hasStatus = statusPedido != null;
+        boolean hasStatus = status != null;
 
         if (hasSearch && hasStatus) {
-            entregas = entregaRepository.searchByTermAndStatus(search, statusPedido, pageable);
+            entregas = entregaRepository.searchByTermAndStatus(search, status, pageable);
         } else if (hasSearch) {
             entregas = entregaRepository.searchByTerm(search, pageable);
         } else if (hasStatus) {
-            entregas = entregaRepository.findByStatusPedido(statusPedido, pageable);
+            entregas = entregaRepository.findByStatus(status, pageable);
         } else {
             entregas = entregaRepository.findAll(pageable);
         }
 
-        return PagedResponse.of(entregas.map(EntregaResponse::from));
+        return enrichPage(entregas);
     }
 
     @Override
     public EntregaResponse findById(String id) {
         Entrega entrega = entregaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Entrega", "id", id));
-        return EntregaResponse.from(entrega);
+        Cliente cliente = StringUtils.hasText(entrega.getClienteId())
+                ? clienteRepository.findById(entrega.getClienteId()).orElse(null)
+                : null;
+        return EntregaResponse.from(entrega, cliente);
     }
 
     @Override
     public EntregaResponse create(EntregaRequest request) {
-        // Validar que el datosEntregaId exista si se proporcionó
-        DatosEntrega datosEntrega = resolverDatosEntrega(request.getDatosEntregaId());
+        Cliente cliente = clienteRepository.findById(request.getClienteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", "id", request.getClienteId()));
 
         Entrega entrega = Entrega.builder()
-                .codigoProducto(request.getCodigoProducto())
-                .cantidad(request.getCantidad())
-                .precio(request.getPrecio())
-                .statusPedido(request.getStatusPedido() != null
-                        ? request.getStatusPedido()
-                        : Entrega.StatusPedido.PENDIENTE)
-                .datosEntregaId(request.getDatosEntregaId())
+                .clienteId(request.getClienteId())
+                .direccionEnvio(request.getDireccionEnvio())
+                .status(request.getStatus() != null ? request.getStatus() : Entrega.StatusEntrega.PENDIENTE)
                 .build();
 
         Entrega saved = entregaRepository.save(entrega);
-        log.info("Entrega creada con id: {} para cliente: {}", saved.getId(),
-                datosEntrega != null ? datosEntrega.getClienteId() : "sin asignar");
-        return EntregaResponse.from(saved, datosEntrega);
+        log.info("Entrega creada con id: {} para cliente: {}", saved.getId(), cliente.getNombre());
+        return EntregaResponse.from(saved, cliente);
     }
 
     @Override
@@ -88,20 +90,18 @@ public class EntregaServiceImpl implements EntregaService {
         Entrega entrega = entregaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Entrega", "id", id));
 
-        // Validar que el nuevo datosEntregaId exista si cambió
-        DatosEntrega datosEntrega = resolverDatosEntrega(request.getDatosEntregaId());
+        Cliente cliente = clienteRepository.findById(request.getClienteId())
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", "id", request.getClienteId()));
 
-        entrega.setCodigoProducto(request.getCodigoProducto());
-        entrega.setCantidad(request.getCantidad());
-        entrega.setPrecio(request.getPrecio());
-        entrega.setDatosEntregaId(request.getDatosEntregaId());
-        if (request.getStatusPedido() != null) {
-            entrega.setStatusPedido(request.getStatusPedido());
+        entrega.setClienteId(request.getClienteId());
+        entrega.setDireccionEnvio(request.getDireccionEnvio());
+        if (request.getStatus() != null) {
+            entrega.setStatus(request.getStatus());
         }
 
         Entrega updated = entregaRepository.save(entrega);
         log.info("Entrega actualizada con id: {}", updated.getId());
-        return EntregaResponse.from(updated, datosEntrega);
+        return EntregaResponse.from(updated, cliente);
     }
 
     @Override
@@ -114,55 +114,37 @@ public class EntregaServiceImpl implements EntregaService {
     }
 
     @Override
-    public PagedResponse<EntregaResponse> findByClienteId(String clienteId, int page, int size,
-                                                          String sortBy, String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        // Primero se obtienen los IDs de DatosEntrega que pertenecen al cliente
-        List<String> datosEntregaIds = datosEntregaRepository.findByClienteId(clienteId)
-                .stream()
-                .map(de -> de.getId())
-                .collect(Collectors.toList());
-
-        if (datosEntregaIds.isEmpty()) {
-            return PagedResponse.of(Page.empty(pageable));
-        }
-
-        return PagedResponse.of(
-                entregaRepository.findByDatosEntregaIdIn(datosEntregaIds, pageable)
-                        .map(EntregaResponse::from)
-        );
-    }
-
-    @Override
-    public PagedResponse<EntregaResponse> findByDatosEntregaId(String datosEntregaId, int page, int size) {
-        // Valida que la dirección de entrega exista antes de buscar
-        if (!datosEntregaRepository.existsById(datosEntregaId)) {
-            throw new ResourceNotFoundException("DatosEntrega", "id", datosEntregaId);
+    public PagedResponse<EntregaResponse> findByClienteId(String clienteId, int page, int size) {
+        if (!clienteRepository.existsById(clienteId)) {
+            throw new ResourceNotFoundException("Cliente", "id", clienteId);
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return PagedResponse.of(
-                entregaRepository.findByDatosEntregaId(datosEntregaId, pageable)
-                        .map(EntregaResponse::from)
-        );
+        Page<Entrega> pageEntregas = entregaRepository.findByClienteId(clienteId, pageable);
+        return enrichPage(pageEntregas);
     }
 
-    // ─── helpers privados ─────────────────────────────────────────────────────
-
-
-    /**
-     * Busca el DatosEntrega correspondiente al ID dado.
-     * Si el ID no es nulo y no existe en la base de datos, lanza ResourceNotFoundException.
-     * Si el ID es nulo (entrega sin dirección asignada aún), retorna null.
-     */
-    private DatosEntrega resolverDatosEntrega(String datosEntregaId) {
-        if (!StringUtils.hasText(datosEntregaId)) {
-            return null;
+    private PagedResponse<EntregaResponse> enrichPage(Page<Entrega> page) {
+        if (page.isEmpty()) {
+            return PagedResponse.of(Page.empty(page.getPageable()));
         }
-        return datosEntregaRepository.findById(datosEntregaId)
-                .orElseThrow(() -> new ResourceNotFoundException("DatosEntrega", "id", datosEntregaId));
+
+        Set<String> clienteIds = page.getContent().stream()
+                .map(Entrega::getClienteId)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+
+        Map<String, Cliente> clienteMap = clienteIds.isEmpty()
+                ? Collections.emptyMap()
+                : clienteRepository.findAllById(clienteIds).stream()
+                        .collect(Collectors.toMap(Cliente::getId, c -> c));
+
+        List<EntregaResponse> enriched = page.getContent().stream()
+                .map(e -> EntregaResponse.from(e, clienteMap.get(e.getClienteId())))
+                .collect(Collectors.toList());
+
+        Page<EntregaResponse> responsePage = new PageImpl<>(
+                enriched, page.getPageable(), page.getTotalElements());
+
+        return PagedResponse.of(responsePage);
     }
 }

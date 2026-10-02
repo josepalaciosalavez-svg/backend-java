@@ -29,83 +29,66 @@ import javax.validation.Valid;
 @RequestMapping("/entregas")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "bearerAuth")
-@Tag(name = "Entregas", description = "Gestión de pedidos y entregas de productos")
+@Tag(name = "Entregas", description = "Gestión de direcciones de entrega asociadas a clientes")
 public class EntregaController {
 
     private final EntregaService entregaService;
 
     @GetMapping
-    @Operation(summary = "Consultar pedidos", description = "Lista de pedidos")
+    @Operation(summary = "Listar entregas")
     public ResponseEntity<ApiResponse<PagedResponse<EntregaResponse>>> findAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
-            @Parameter(description = "Búsqueda por código de producto") @RequestParam(required = false) String search,
-            @Parameter(description = "Filtrar por status del pedido") @RequestParam(required = false) Entrega.StatusPedido statusPedido) {
+            @Parameter(description = "Búsqueda por dirección o cliente_id") @RequestParam(required = false) String search,
+            @RequestParam(required = false) Entrega.StatusEntrega status) {
 
-        PagedResponse<EntregaResponse> response = entregaService.findAll(page, size, sortBy, sortDir, search,
-                statusPedido);
+        PagedResponse<EntregaResponse> response =
+                entregaService.findAll(page, size, sortBy, sortDir, search, status);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Consultar pedido por ID")
+    @Operation(summary = "Obtener entrega por ID")
     public ResponseEntity<ApiResponse<EntregaResponse>> findById(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.ok(entregaService.findById(id)));
     }
 
     @GetMapping("/cliente/{clienteId}")
     @Operation(
-        summary = "Consultar pedidos por cliente",
-        description = "Retorna todos los pedidos asociados a un cliente, a través de sus datos de entrega"
+        summary = "Consultar entregas por cliente",
+        description = "Retorna todas las direcciones de envío asociadas a un cliente específico"
     )
     public ResponseEntity<ApiResponse<PagedResponse<EntregaResponse>>> findByCliente(
             @PathVariable String clienteId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
-
-        PagedResponse<EntregaResponse> response = entregaService.findByClienteId(clienteId, page, size, sortBy, sortDir);
-        return ResponseEntity.ok(ApiResponse.ok(response));
-    }
-
-    @GetMapping("/datos-entrega/{datosEntregaId}")
-    @Operation(
-        summary = "Consultar pedidos por dirección de entrega",
-        description = "Retorna todos los pedidos asociados a una dirección de entrega específica"
-    )
-    public ResponseEntity<ApiResponse<PagedResponse<EntregaResponse>>> findByDatosEntrega(
-            @PathVariable String datosEntregaId,
-            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-
-        PagedResponse<EntregaResponse> response = entregaService.findByDatosEntregaId(datosEntregaId, page, size);
+        PagedResponse<EntregaResponse> response = entregaService.findByClienteId(clienteId, page, size);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @PostMapping
-    @Operation(summary = "Crear pedido")
+    @Operation(summary = "Crear entrega (dirección de envío)")
     public ResponseEntity<ApiResponse<EntregaResponse>> create(@Valid @RequestBody EntregaRequest request) {
         EntregaResponse response = entregaService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created("Pedido creado exitosamente", response));
+                .body(ApiResponse.created("Entrega creada exitosamente", response));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Actualizar pedido")
+    @Operation(summary = "Actualizar entrega")
     public ResponseEntity<ApiResponse<EntregaResponse>> update(
             @PathVariable String id,
             @Valid @RequestBody EntregaRequest request) {
         EntregaResponse response = entregaService.update(id, request);
-        return ResponseEntity.ok(ApiResponse.ok("Pedido actualizado exitosamente", response));
+        return ResponseEntity.ok(ApiResponse.ok("Entrega actualizada exitosamente", response));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Eliminar pedido")
+    @Operation(summary = "Eliminar entrega")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
         entregaService.delete(id);
-        return ResponseEntity.ok(ApiResponse.ok("Pedido eliminado exitosamente", null));
+        return ResponseEntity.ok(ApiResponse.ok("Entrega eliminada exitosamente", null));
     }
 }

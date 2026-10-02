@@ -1,11 +1,10 @@
 package com.liverpool.backend.dto.response;
 
-import com.liverpool.backend.model.DatosEntrega;
+import com.liverpool.backend.model.Cliente;
 import com.liverpool.backend.model.Entrega;
 import lombok.Builder;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -13,58 +12,33 @@ import java.time.LocalDateTime;
 public class EntregaResponse {
 
     private String id;
-    private String codigoProducto;
-    private Integer cantidad;
-    private BigDecimal precio;
-    private BigDecimal total;
-    private Entrega.StatusPedido statusPedido;
-
-    // Referencia a datos de entrega
-    private String datosEntregaId;
-
-    // Datos desnormalizados para no requerir una segunda llamada desde el cliente
     private String clienteId;
+    private String nombreCliente;
     private String direccionEnvio;
-    private DatosEntrega.StatusEntrega statusEntrega;
-
+    private Entrega.StatusEntrega status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    /**
-     * Mapeo sin datos de entrega (usado en listados paginados donde
-     * no se hace join para mantener el rendimiento).
-     */
     public static EntregaResponse from(Entrega entrega) {
         return from(entrega, null);
     }
 
-    /**
-     * Mapeo completo con datos de entrega y cliente embebidos.
-     * Usado en create, update y findById.
-     */
-    public static EntregaResponse from(Entrega entrega, DatosEntrega datosEntrega) {
-        BigDecimal total = entrega.getPrecio() != null && entrega.getCantidad() != null
-                ? entrega.getPrecio().multiply(BigDecimal.valueOf(entrega.getCantidad()))
-                : BigDecimal.ZERO;
-
-        EntregaResponseBuilder builder = EntregaResponse.builder()
-                .id(entrega.getId())
-                .codigoProducto(entrega.getCodigoProducto())
-                .cantidad(entrega.getCantidad())
-                .precio(entrega.getPrecio())
-                .total(total)
-                .statusPedido(entrega.getStatusPedido())
-                .datosEntregaId(entrega.getDatosEntregaId())
-                .createdAt(entrega.getCreatedAt())
-                .updatedAt(entrega.getUpdatedAt());
-
-        // Si se pasaron los datos de entrega, agrega cliente y dirección al response
-        if (datosEntrega != null) {
-            builder.clienteId(datosEntrega.getClienteId())
-                   .direccionEnvio(datosEntrega.getDireccionEnvio())
-                   .statusEntrega(datosEntrega.getStatus());
+    public static EntregaResponse from(Entrega entrega, Cliente cliente) {
+        String nombreCompleto = null;
+        if (cliente != null) {
+            nombreCompleto = ((cliente.getNombre() != null ? cliente.getNombre() : "")
+                    + (cliente.getApellidoPaterno() != null ? " " + cliente.getApellidoPaterno() : "")
+                    + (cliente.getApellidoMaterno() != null ? " " + cliente.getApellidoMaterno() : "")).trim();
         }
 
-        return builder.build();
+        return EntregaResponse.builder()
+                .id(entrega.getId())
+                .clienteId(entrega.getClienteId())
+                .nombreCliente(nombreCompleto)
+                .direccionEnvio(entrega.getDireccionEnvio())
+                .status(entrega.getStatus())
+                .createdAt(entrega.getCreatedAt())
+                .updatedAt(entrega.getUpdatedAt())
+                .build();
     }
 }

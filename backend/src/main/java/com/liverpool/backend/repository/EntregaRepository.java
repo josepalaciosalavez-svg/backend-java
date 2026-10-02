@@ -7,31 +7,30 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface EntregaRepository extends MongoRepository<Entrega, String> {
 
-    List<Entrega> findByDatosEntregaId(String datosEntregaId);
+    List<Entrega> findByClienteId(String clienteId);
 
-    Page<Entrega> findByStatusPedido(Entrega.StatusPedido statusPedido, Pageable pageable);
+    List<Entrega> findAllById(Iterable<String> ids);
 
-    Page<Entrega> findByDatosEntregaId(String datosEntregaId, Pageable pageable);
+    Page<Entrega> findByStatus(Entrega.StatusEntrega status, Pageable pageable);
 
-    // Permite filtrar todas las entregas de un cliente dado su conjunto de datosEntregaIds
-    Page<Entrega> findByDatosEntregaIdIn(Collection<String> datosEntregaIds, Pageable pageable);
+    Page<Entrega> findByClienteId(String clienteId, Pageable pageable);
 
     @Query("{ '$or': [ " +
-           "{ 'codigo_producto': { '$regex': ?0, '$options': 'i' } }, " +
-           "{ 'status_pedido':   { '$regex': ?0, '$options': 'i' } } " +
+           "{ 'cliente_id': { '$regex': ?0, '$options': 'i' } }, " +
+           "{ 'direccion_envio': { '$regex': ?0, '$options': 'i' } } " +
            "] }")
     Page<Entrega> searchByTerm(String term, Pageable pageable);
 
     @Query("{ '$and': [ " +
-           "{ 'status_pedido': ?1 }, " +
+           "{ 'status': ?1 }, " +
            "{ '$or': [ " +
-           "{ 'codigo_producto': { '$regex': ?0, '$options': 'i' } } " +
+           "{ 'cliente_id': { '$regex': ?0, '$options': 'i' } }, " +
+           "{ 'direccion_envio': { '$regex': ?0, '$options': 'i' } } " +
            "] ] }")
-    Page<Entrega> searchByTermAndStatus(String term, Entrega.StatusPedido statusPedido, Pageable pageable);
+    Page<Entrega> searchByTermAndStatus(String term, Entrega.StatusEntrega status, Pageable pageable);
 }

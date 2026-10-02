@@ -1,7 +1,7 @@
 package com.liverpool.backend.migration;
 
 import com.liverpool.backend.model.Cliente;
-import com.liverpool.backend.model.DatosEntrega;
+import com.liverpool.backend.model.Entrega;
 import io.mongock.api.annotations.ChangeUnit;
 import io.mongock.api.annotations.Execution;
 import io.mongock.api.annotations.RollbackExecution;
@@ -15,38 +15,36 @@ import org.springframework.data.mongodb.core.query.Query;
 import java.util.List;
 
 @Slf4j
-@ChangeUnit(id = "V002-create-datos-entrega-collection", order = "002", author = "dev-team")
-public class V002DatosEntregaMigration {
+@ChangeUnit(id = "V002-create-entregas-collection", order = "002", author = "dev-team")
+public class V002EntregaMigration {
 
     @Execution
     public void execute(MongoTemplate mongoTemplate) {
-        if (!mongoTemplate.collectionExists(DatosEntrega.class)) {
-            mongoTemplate.createCollection(DatosEntrega.class);
-            log.info("Colección 'datos_entrega' creada");
+        if (!mongoTemplate.collectionExists(Entrega.class)) {
+            mongoTemplate.createCollection(Entrega.class);
+            log.info("Colección 'entregas' creada");
         }
 
-        IndexOperations indexOps = mongoTemplate.indexOps(DatosEntrega.class);
+        IndexOperations indexOps = mongoTemplate.indexOps(Entrega.class);
         try {
             indexOps.dropIndex("cliente_id");
         } catch (Exception ignored) {
-            // Ignorar si no existía
         }
         indexOps.ensureIndex(new Index().on("cliente_id", Sort.Direction.ASC).named("idx_cliente_id"));
         indexOps.ensureIndex(new Index().on("status", Sort.Direction.ASC).named("idx_status"));
         indexOps.ensureIndex(new Index().on("created_at", Sort.Direction.DESC).named("idx_created_at"));
-        log.info("Índices de 'datos_entrega' aplicados");
+        log.info("Índices de 'entregas' aplicados");
 
-        if (mongoTemplate.estimatedCount(DatosEntrega.class) == 0) {
-            seedDatosEntrega(mongoTemplate);
+        if (mongoTemplate.estimatedCount(Entrega.class) == 0) {
+            seedEntregas(mongoTemplate);
         }
     }
 
-    private void seedDatosEntrega(MongoTemplate mongoTemplate) {
-        // Obtener los primeros 3 clientes para relacionar
+    private void seedEntregas(MongoTemplate mongoTemplate) {
         List<Cliente> clientes = mongoTemplate.find(new Query().limit(3), Cliente.class);
 
         if (clientes.isEmpty()) {
-            log.warn("No hay clientes disponibles para crear datos de entrega de prueba");
+            log.warn("No hay clientes disponibles para crear entregas de prueba");
             return;
         }
 
@@ -57,35 +55,28 @@ public class V002DatosEntregaMigration {
             "Av. Universidad 3000, Puebla, Puebla"
         };
 
-        DatosEntrega.StatusEntrega[] statuses = {
-            DatosEntrega.StatusEntrega.PENDIENTE,
-            DatosEntrega.StatusEntrega.EN_PROCESO,
-            DatosEntrega.StatusEntrega.ENTREGADO
+        Entrega.StatusEntrega[] statuses = {
+            Entrega.StatusEntrega.ENTREGADO,
+            Entrega.StatusEntrega.EN_PROCESO,
+            Entrega.StatusEntrega.PENDIENTE,
+            Entrega.StatusEntrega.PENDIENTE
         };
 
-        for (int i = 0; i < Math.min(3, clientes.size()); i++) {
-            mongoTemplate.save(DatosEntrega.builder()
-                    .clienteId(clientes.get(i).getId())
+        for (int i = 0; i < direcciones.length; i++) {
+            Cliente cliente = clientes.get(i % clientes.size());
+            mongoTemplate.save(Entrega.builder()
+                    .clienteId(cliente.getId())
                     .direccionEnvio(direcciones[i])
                     .status(statuses[i])
                     .build());
         }
 
-        // Agregar uno extra con el primer cliente
-        if (!clientes.isEmpty()) {
-            mongoTemplate.save(DatosEntrega.builder()
-                    .clienteId(clientes.get(0).getId())
-                    .direccionEnvio(direcciones[3])
-                    .status(DatosEntrega.StatusEntrega.PENDIENTE)
-                    .build());
-        }
-
-        log.info("Datos de entrega de prueba insertados");
+        log.info("{} entregas de prueba insertadas ligadas a clientes", direcciones.length);
     }
 
     @RollbackExecution
     public void rollback(MongoTemplate mongoTemplate) {
-        mongoTemplate.dropCollection(DatosEntrega.class);
-        log.warn("Rollback: colección 'datos_entrega' eliminada");
+        mongoTemplate.dropCollection(Entrega.class);
+        log.warn("Rollback: colección 'entregas' eliminada");
     }
 }

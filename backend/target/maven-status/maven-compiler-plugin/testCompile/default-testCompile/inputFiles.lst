@@ -1,7 +1,7 @@
+/Users/josepalacios/Documents/REPO/izentrix/liverpool/backend/src/test/java/com/liverpool/backend/service/PedidoServiceImplTest.java
 /Users/josepalacios/Documents/REPO/izentrix/liverpool/backend/src/test/java/com/liverpool/backend/controller/ClienteControllerTest.java
 /Users/josepalacios/Documents/REPO/izentrix/liverpool/backend/src/test/java/com/liverpool/backend/service/ClienteServiceImplTest.java
 /Users/josepalacios/Documents/REPO/izentrix/liverpool/backend/src/test/java/com/liverpool/backend/service/UsuarioServiceImplTest.java
-/Users/josepalacios/Documents/REPO/izentrix/liverpool/backend/src/test/java/com/liverpool/backend/service/DatosEntregaServiceImplTest.java
 /Users/josepalacios/Documents/REPO/izentrix/liverpool/backend/src/test/java/com/liverpool/backend/security/JwtServiceTest.java
 /Users/josepalacios/Documents/REPO/izentrix/liverpool/backend/src/test/java/com/liverpool/backend/controller/AuthControllerTest.java
 /Users/josepalacios/Documents/REPO/izentrix/liverpool/backend/src/test/java/com/liverpool/backend/service/EntregaServiceImplTest.java
