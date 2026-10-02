@@ -9,7 +9,7 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_URI:mongodb://localhost:27017/liverpool_db}
-      auto-index-creation: true
+      auto-index-creation: false
   jackson:
     default-property-inclusion: non_null
     serialization:
