@@ -46,7 +46,6 @@ public class V004UsuarioMigration {
         // Admin principal
         Set<Usuario.Rol> rolesAdmin = new HashSet<>();
         rolesAdmin.add(Usuario.Rol.ROLE_ADMIN);
-        rolesAdmin.add(Usuario.Rol.ROLE_USER);
 
         mongoTemplate.save(Usuario.builder()
                 .nombre("Administrador Sistema")

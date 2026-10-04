@@ -56,10 +56,10 @@ public class V002EntregaMigration {
         };
 
         Entrega.StatusEntrega[] statuses = {
-            Entrega.StatusEntrega.ENTREGADO,
-            Entrega.StatusEntrega.EN_PROCESO,
-            Entrega.StatusEntrega.PENDIENTE,
-            Entrega.StatusEntrega.PENDIENTE
+            Entrega.StatusEntrega.ACTIVO,
+            Entrega.StatusEntrega.ACTIVO,
+            Entrega.StatusEntrega.ACTIVO,
+            Entrega.StatusEntrega.INACTIVO
         };
 
         for (int i = 0; i < direcciones.length; i++) {

@@ -23,6 +23,6 @@ public class EntregaRequest {
     @Schema(description = "Dirección completa de entrega", example = "Av. Insurgentes Sur 123, Col. Del Valle, CDMX, CP 03100")
     private String direccionEnvio;
 
-    @Schema(description = "Estatus de la entrega", example = "PENDIENTE")
+    @Schema(description = "Estatus de la entrega (ACTIVO, INACTIVO)", example = "ACTIVO")
     private Entrega.StatusEntrega status;
 }

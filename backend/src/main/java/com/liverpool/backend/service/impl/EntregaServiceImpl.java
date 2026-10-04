@@ -77,7 +77,7 @@ public class EntregaServiceImpl implements EntregaService {
         Entrega entrega = Entrega.builder()
                 .clienteId(request.getClienteId())
                 .direccionEnvio(request.getDireccionEnvio())
-                .status(request.getStatus() != null ? request.getStatus() : Entrega.StatusEntrega.PENDIENTE)
+                .status(request.getStatus() != null ? request.getStatus() : Entrega.StatusEntrega.ACTIVO)
                 .build();
 
         Entrega saved = entregaRepository.save(entrega);

@@ -32,7 +32,7 @@ public class Entrega {
 
     @Field("status")
     @Builder.Default
-    private StatusEntrega status = StatusEntrega.PENDIENTE;
+    private StatusEntrega status = StatusEntrega.ACTIVO;
 
     @CreatedDate
     @Field("created_at")
@@ -43,6 +43,6 @@ public class Entrega {
     private LocalDateTime updatedAt;
 
     public enum StatusEntrega {
-        PENDIENTE, EN_PROCESO, ENTREGADO, CANCELADO
+        ACTIVO, INACTIVO
     }
 }
