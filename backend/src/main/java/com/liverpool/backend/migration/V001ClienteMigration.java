@@ -41,11 +41,19 @@ public class V001ClienteMigration {
     }
 
     private void seedClientes(MongoTemplate mongoTemplate) {
+        org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder =
+                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+        java.util.Set<com.liverpool.backend.model.Usuario.Rol> rolesCliente =
+                java.util.Collections.singleton(com.liverpool.backend.model.Usuario.Rol.ROLE_CLIENTE);
+        String defaultPassword = encoder.encode("Cliente@2024!");
+
         mongoTemplate.save(Cliente.builder()
                 .nombre("Carlos")
                 .apellidoPaterno("Ramírez")
                 .apellidoMaterno("Herrera")
                 .email("carlos.ramirez@correo.com")
+                .password(defaultPassword)
+                .roles(rolesCliente)
                 .status(Cliente.StatusCliente.ACTIVO)
                 .build());
 
@@ -54,6 +62,8 @@ public class V001ClienteMigration {
                 .apellidoPaterno("González")
                 .apellidoMaterno("López")
                 .email("maria.gonzalez@correo.com")
+                .password(defaultPassword)
+                .roles(rolesCliente)
                 .status(Cliente.StatusCliente.ACTIVO)
                 .build());
 
@@ -62,6 +72,8 @@ public class V001ClienteMigration {
                 .apellidoPaterno("Mendoza")
                 .apellidoMaterno("Soto")
                 .email("jorge.mendoza@correo.com")
+                .password(defaultPassword)
+                .roles(rolesCliente)
                 .status(Cliente.StatusCliente.INACTIVO)
                 .build());
 
@@ -70,6 +82,8 @@ public class V001ClienteMigration {
                 .apellidoPaterno("Torres")
                 .apellidoMaterno("Vega")
                 .email("ana.torres@correo.com")
+                .password(defaultPassword)
+                .roles(rolesCliente)
                 .status(Cliente.StatusCliente.ACTIVO)
                 .build());
 
@@ -78,10 +92,12 @@ public class V001ClienteMigration {
                 .apellidoPaterno("Castillo")
                 .apellidoMaterno("Fuentes")
                 .email("luis.castillo@correo.com")
+                .password(defaultPassword)
+                .roles(rolesCliente)
                 .status(Cliente.StatusCliente.ACTIVO)
                 .build());
 
-        log.info("5 clientes de prueba insertados");
+        log.info("5 clientes de prueba insertados con credenciales (password: Cliente@2024!)");
     }
 
     @RollbackExecution

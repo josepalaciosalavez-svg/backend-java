@@ -36,6 +36,12 @@ public class Cliente {
     @Field("email")
     private String email;
 
+    @Field("password")
+    private String password;
+
+    @Field("roles")
+    private java.util.Set<Usuario.Rol> roles;
+
     @Field("status")
     @Builder.Default
     private StatusCliente status = StatusCliente.ACTIVO;

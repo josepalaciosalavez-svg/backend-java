@@ -17,12 +17,18 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.liverpool.backend.model.Usuario;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Collections;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ClienteServiceImpl implements ClienteService {
 
     private final ClienteRepository clienteRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public PagedResponse<ClienteResponse> findAll(int page, int size, String sortBy,
@@ -63,11 +69,17 @@ public class ClienteServiceImpl implements ClienteService {
             throw new DuplicateResourceException("Cliente", "email", request.getEmail());
         }
 
+        String rawPassword = StringUtils.hasText(request.getPassword())
+                ? request.getPassword()
+                : "Cliente@2024!";
+
         Cliente cliente = Cliente.builder()
                 .nombre(request.getNombre())
                 .apellidoPaterno(request.getApellidoPaterno())
                 .apellidoMaterno(request.getApellidoMaterno())
                 .email(request.getEmail().toLowerCase().trim())
+                .password(passwordEncoder.encode(rawPassword))
+                .roles(Collections.singleton(Usuario.Rol.ROLE_CLIENTE))
                 .status(request.getStatus() != null ? request.getStatus() : Cliente.StatusCliente.ACTIVO)
                 .build();
 
@@ -91,6 +103,9 @@ public class ClienteServiceImpl implements ClienteService {
         cliente.setApellidoPaterno(request.getApellidoPaterno());
         cliente.setApellidoMaterno(request.getApellidoMaterno());
         cliente.setEmail(request.getEmail().toLowerCase().trim());
+        if (StringUtils.hasText(request.getPassword())) {
+            cliente.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
         if (request.getStatus() != null) {
             cliente.setStatus(request.getStatus());
         }

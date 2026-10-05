@@ -64,16 +64,10 @@ public class JwtService {
                     .build()
                     .parseClaimsJws(token);
             return true;
-        } catch (MalformedJwtException e) {
-            log.warn("Token JWT mal formado: {}", e.getMessage());
-        } catch (ExpiredJwtException e) {
-            log.warn("Token JWT expirado: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.warn("Token JWT no soportado: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.warn("JWT claims string vacío: {}", e.getMessage());
+        } catch (io.jsonwebtoken.JwtException | IllegalArgumentException e) {
+            log.warn("Token JWT inválido: {}", e.getMessage());
+            return false;
         }
-        return false;
     }
 
     private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {

@@ -25,5 +25,7 @@ public class UsuarioRequest {
 
     private Set<Usuario.Rol> roles;
 
+    private String clienteId;
+
     private Usuario.StatusUsuario status;
 }

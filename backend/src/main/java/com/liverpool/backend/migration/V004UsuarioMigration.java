@@ -50,7 +50,7 @@ public class V004UsuarioMigration {
         mongoTemplate.save(Usuario.builder()
                 .nombre("Administrador Sistema")
                 .email("admin@liverpool.com")
-                .password(encoder.encode("Admin@2024!"))
+                .password(encoder.encode("Admin@L1V3rp0l!"))
                 .roles(rolesAdmin)
                 .status(Usuario.StatusUsuario.ACTIVO)
                 .build());
@@ -62,7 +62,7 @@ public class V004UsuarioMigration {
         mongoTemplate.save(Usuario.builder()
                 .nombre("Operador Logística")
                 .email("operador@liverpool.com")
-                .password(encoder.encode("Oper@2024!"))
+                .password(encoder.encode("Oper@L1V3rp0l!"))
                 .roles(rolesUser)
                 .status(Usuario.StatusUsuario.ACTIVO)
                 .build());
@@ -74,16 +74,16 @@ public class V004UsuarioMigration {
         mongoTemplate.save(Usuario.builder()
                 .nombre("Supervisor Ventas")
                 .email("supervisor@liverpool.com")
-                .password(encoder.encode("Super@2024!"))
+                .password(encoder.encode("Super@L1V3rp0l!"))
                 .roles(rolesViewer)
                 .status(Usuario.StatusUsuario.ACTIVO)
                 .build());
 
         log.info("3 usuarios de prueba insertados");
         log.info("Credenciales por defecto:");
-        log.info("  ADMIN  -> admin@liverpool.com / Admin@2024!");
-        log.info("  USER   -> operador@liverpool.com / Oper@2024!");
-        log.info("  VIEWER -> supervisor@liverpool.com / Super@2024!");
+        log.info("  ADMIN  -> admin@liverpool.com / Admin@L1V3rp0l!");
+        log.info("  USER   -> operador@liverpool.com / Oper@L1V3rp0l!");
+        log.info("  VIEWER -> supervisor@liverpool.com / Super@2L1V3rp0l024!");
     }
 
     @RollbackExecution

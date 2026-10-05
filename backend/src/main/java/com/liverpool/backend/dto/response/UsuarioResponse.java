@@ -16,6 +16,7 @@ public class UsuarioResponse {
     private String email;
     private Set<Usuario.Rol> roles;
     private Usuario.StatusUsuario status;
+    private String clienteId;
     private LocalDateTime createdAt;
 
     public static UsuarioResponse from(Usuario usuario) {
@@ -25,6 +26,7 @@ public class UsuarioResponse {
                 .email(usuario.getEmail())
                 .roles(usuario.getRoles())
                 .status(usuario.getStatus())
+                .clienteId(usuario.getClienteId())
                 .createdAt(usuario.getCreatedAt())
                 .build();
     }

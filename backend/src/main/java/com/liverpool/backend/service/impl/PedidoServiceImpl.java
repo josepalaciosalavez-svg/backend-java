@@ -36,10 +36,26 @@ public class PedidoServiceImpl implements PedidoService {
     private final EntregaRepository entregaRepository;
     private final ClienteRepository clienteRepository;
 
+    private String getCurrentClienteIdIfClient() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CLIENTE"))) {
+            return clienteRepository.findByEmail(auth.getName())
+                    .map(Cliente::getId)
+                    .orElse(null);
+        }
+        return null;
+    }
+
     @Override
     public PagedResponse<PedidoResponse> findAll(int page, int size, String sortBy,
                                                  String sortDir, String search,
                                                  Pedido.StatusPedido statusPedido) {
+        String currentClienteId = getCurrentClienteIdIfClient();
+        if (currentClienteId != null) {
+            return findByClienteId(currentClienteId, page, size, sortBy, sortDir);
+        }
+
         Sort sort = sortDir.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
@@ -70,6 +86,13 @@ public class PedidoServiceImpl implements PedidoService {
         Entrega entrega = pedido.getEntregaId() != null
                 ? entregaRepository.findById(pedido.getEntregaId()).orElse(null)
                 : null;
+
+        String currentClienteId = getCurrentClienteIdIfClient();
+        if (currentClienteId != null) {
+            if (entrega == null || !currentClienteId.equals(entrega.getClienteId())) {
+                throw new ResourceNotFoundException("Pedido", "id", id);
+            }
+        }
 
         Cliente cliente = (entrega != null && StringUtils.hasText(entrega.getClienteId()))
                 ? clienteRepository.findById(entrega.getClienteId()).orElse(null)

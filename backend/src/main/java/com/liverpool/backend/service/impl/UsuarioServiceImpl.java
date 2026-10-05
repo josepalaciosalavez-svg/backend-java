@@ -7,7 +7,9 @@ import com.liverpool.backend.dto.response.PagedResponse;
 import com.liverpool.backend.dto.response.UsuarioResponse;
 import com.liverpool.backend.exception.DuplicateResourceException;
 import com.liverpool.backend.exception.ResourceNotFoundException;
+import com.liverpool.backend.model.Cliente;
 import com.liverpool.backend.model.Usuario;
+import com.liverpool.backend.repository.ClienteRepository;
 import com.liverpool.backend.repository.UsuarioRepository;
 import com.liverpool.backend.security.service.JwtService;
 import com.liverpool.backend.service.UsuarioService;
@@ -27,6 +29,8 @@ import org.springframework.util.StringUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -34,25 +38,56 @@ import java.util.HashSet;
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final ClienteRepository clienteRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public AuthResponse login(LoginRequest request) {
+        String email = request.getEmail().toLowerCase().trim();
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(email, request.getPassword())
         );
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String accessToken = jwtService.generateToken(userDetails);
         String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "email", request.getEmail()));
+        // 1. Verificar si es un usuario del sistema (ADMIN, USER, VIEWER)
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(email);
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            log.info("Login exitoso para usuario del sistema: {}", email);
+            return AuthResponse.of(accessToken, refreshToken, jwtService.getJwtExpirationMs(), UsuarioResponse.from(usuario));
+        }
 
-        log.info("Login exitoso para: {}", request.getEmail());
-        return AuthResponse.of(accessToken, refreshToken, jwtService.getJwtExpirationMs(), UsuarioResponse.from(usuario));
+        // 2. Verificar si es un cliente que ingresa al sistema
+        Cliente cliente = clienteRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", "email", email));
+
+        String nombreCompleto = ((cliente.getNombre() != null ? cliente.getNombre() : "")
+                + (cliente.getApellidoPaterno() != null ? " " + cliente.getApellidoPaterno() : "")
+                + (cliente.getApellidoMaterno() != null ? " " + cliente.getApellidoMaterno() : "")).trim();
+
+        Set<Usuario.Rol> roles = cliente.getRoles() != null && !cliente.getRoles().isEmpty()
+                ? cliente.getRoles()
+                : Collections.singleton(Usuario.Rol.ROLE_CLIENTE);
+
+        UsuarioResponse clienteResponse = UsuarioResponse.builder()
+                .id(cliente.getId())
+                .nombre(nombreCompleto)
+                .email(cliente.getEmail())
+                .roles(roles)
+                .status(cliente.getStatus() == Cliente.StatusCliente.ACTIVO
+                        ? Usuario.StatusUsuario.ACTIVO
+                        : Usuario.StatusUsuario.INACTIVO)
+                .clienteId(cliente.getId())
+                .createdAt(cliente.getCreatedAt())
+                .build();
+
+        log.info("Login exitoso para cliente: {} con ID: {}", email, cliente.getId());
+        return AuthResponse.of(accessToken, refreshToken, jwtService.getJwtExpirationMs(), clienteResponse);
     }
 
     @Override
@@ -74,6 +109,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .email(request.getEmail().toLowerCase().trim())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles(roles)
+                .clienteId(request.getClienteId())
                 .status(status)
                 .build();
 
@@ -125,6 +161,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
         if (request.getRoles() != null && !request.getRoles().isEmpty()) {
             usuario.setRoles(request.getRoles());
+        }
+        if (request.getClienteId() != null) {
+            usuario.setClienteId(request.getClienteId());
         }
         if (request.getStatus() != null) {
             usuario.setStatus(request.getStatus());

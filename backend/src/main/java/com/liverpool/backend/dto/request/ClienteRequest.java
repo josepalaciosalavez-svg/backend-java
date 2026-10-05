@@ -25,5 +25,8 @@ public class ClienteRequest {
     @Email(message = "Formato de email inválido")
     private String email;
 
+    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    private String password;
+
     private Cliente.StatusCliente status;
 }

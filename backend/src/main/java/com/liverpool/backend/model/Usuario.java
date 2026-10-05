@@ -37,6 +37,10 @@ public class Usuario {
     @Field("roles")
     private Set<Rol> roles;
 
+    @Indexed
+    @Field("cliente_id")
+    private String clienteId;
+
     @Field("status")
     @Builder.Default
     private StatusUsuario status = StatusUsuario.ACTIVO;
@@ -50,7 +54,7 @@ public class Usuario {
     private LocalDateTime updatedAt;
 
     public enum Rol {
-        ROLE_ADMIN, ROLE_USER, ROLE_VIEWER
+        ROLE_ADMIN, ROLE_USER, ROLE_VIEWER, ROLE_CLIENTE
     }
 
     public enum StatusUsuario {
